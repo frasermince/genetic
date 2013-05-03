@@ -2,77 +2,47 @@ import java.util.*;
 import java.io.*;
 
 
+class Item{
+	Item(int w, int v){
+		weight = w;
+		value = v;
+	}
+
+	public int weight;
+	public int value;
+}
 
 class Genotype{
 	Genotype(int n){
 		size = n;
-
-		board = new BitSet(size * size);
+		board = new BitSet();
 		//System.out.print("size" + board.length() + "\n");
 	}
 
 	public void randomStart(){
-		boolean temp;
-		int random;
 		Random selector = new Random();
-		for(int i = 0; i < size * size; i++){
-			board.set(i,false);
-		}
 		for(int i = 0; i < size; i++){
-			//temp = selector.nextBoolean();
-			//System.out.print("randomizing " + temp + "\n");
-			random = selector.nextInt(size * size);
-			if(board.get(random) == false || i == 0)
-				board.set(random);
-			else
-				i--;
+			board.set(i,selector.nextBoolean());
 		}
 	}
 
-	public int evaluation(){
-		int count = 0;
-		int conflict = 0;
-		bigLoop: for(int i = 0; i < size * size; i++){
-			for(int j = i; j < i / size * size + size; j++){//rows
-				if(board.get(i) && board.get(j) && i != j){
-					//System.out.print("rows " + i + " and " + j + "\n");
-					conflict++;
-					continue bigLoop;
-				}
+	public int evaluation(ArrayList<Item> inventory, int maximum){
+		int total = 0;
+		int w = 0;
+		for(int i = 0; i < inventory.size(); i++){
+			if(board.get(i)){
+				//System.out.print(inventory.get(i).weight + " ");
+				//System.out.print(inventory.get(i).value + "\n");
+				total += inventory.get(i).value;
+				w += inventory.get(i).weight;
 			}
-			for(int j = i; j < board.length(); j+=size){//columns
-				if(board.get(i) && board.get(j) && i != j){
-					//System.out.print("columns " + i + " and " + j + "\n");
-					conflict++;
-					continue bigLoop;
-				}
-			}
-			count = i;
-			while (count < board.length()){//diagnols
-				if(board.get(i) && board.get(count) && i != count){
-					//System.out.print("right " + i + " and " + count + "\n");
-					conflict++;
-					continue bigLoop;
-				}
-				if(count % size != 6){
-					count += size + 1;
-				}
-				else break;
-			}
-			count = i;
-			while (count < board.length()){
-				if(board.get(i) && board.get(count) && i != count){
-					//System.out.print("left " + i + " and " + count + "\n");
-					conflict++;
-					continue bigLoop;
-				}
-				if(count % size != 0){
-					count += size - 1;
-				}
-				else break;
-			}	
 		}
-		eval = conflict;
+		if(w > maximum){
+			total = 0;
+		}
+		eval = total;
+		weight = w;
+		//System.out.print("\n");
 		return eval;
 	}
 
@@ -80,14 +50,10 @@ class Genotype{
 		return eval;
 	}
 
-	public boolean fitness(int avg){
-		if(eval == 0){
-			return true;
-		}
+	public void fitness(double avg){
 		//System.out.print("average " + avg + " ");
 		//System.out.print("evaluation " + eval + "\n");
-		fit = (double)avg/(double)eval;
-		return false;
+		fit = (double)eval/avg;
 		//System.out.print("fitness " + fit + "\n");
 	}
 
@@ -95,7 +61,7 @@ class Genotype{
 		return fit;
 	}
 
-	public void set(int n, boolean fact){
+	public void add(int n, boolean fact){
 		board.set(n, fact);
 	}
 
@@ -104,47 +70,42 @@ class Genotype{
 	}
 
 	public int getSize(){
-		return size * size;
+		return size;
 	}
 
-	public void flip(int n){
+	/*public void flip(int n){
 		board.flip(n);
-	}
+	}*/
 
 	public void print(){
-		System.out.print("conflicts = " + eval + "\n");
-		for(int i = 0; i < size * size; i++){
-			if(board.get(i) ==true){
-				System.out.print("1 ");
-			}
-			else{
-				System.out.print("0 ");
-			}
-			
-			if(i % size == size - 1){
-				System.out.print("\n");
-			}
+		System.out.print("size = " + size + "\n");
+		System.out.print("value = " + eval + "\n");
+		System.out.print("weight = " + weight + "\n");
+		for(int i = 0; i < size; i++){
+			System.out.print(board.get(i) + "  ");
 		}
 		//System.out.print(board.get(63));
 	}
 
-	
+	int weight;
 	int eval;
 	double fit;
 	int size;
 	BitSet board;
 }
 
-public class NQueens{
-	NQueens(int n){
+public class Knapsack{
+	Knapsack(int n, ArrayList<Item> inv, int max){
+		maximum = max;
+		inventory = inv;
 		pass = n;
-		best = pass * pass * pass; // better than possible
-		worst = -1; //worst than possible
+		best = -1; // worst than possible
+		worst = pass + 1; //better than possible
 		size = 0;
 		initial = new ArrayList<Genotype>();
 	}
 
-	public int randomStart(){
+	public void randomStart(){
 		int answer = -1;
 		size = 80;
 		for(int i = 0; i < size; i++){
@@ -155,19 +116,17 @@ public class NQueens{
 		}
 		System.out.print("size " + initial.get(0).getSize() + "\n");
 		evaluation();
-		answer = fitness();
+		fitness();
 		select();
 		maxMin();
 		breed();
-		return answer;
 	}
-	public int step(){
+	public void step(){
 		int answer = -1;
 		evaluation();
-		answer = fitness();
+		fitness();
 		select();
 		breed();
-		return answer;
 	}
 
 	public void add(Genotype member){
@@ -180,7 +139,7 @@ public class NQueens{
 		int answer;
 		int total = 0;
 		for(int i = 0; i < size; i++){
-			answer = initial.get(i).evaluation();
+			answer = initial.get(i).evaluation(inventory, maximum);
 			total += answer;
 			//System.out.print(answer + "\n");
 			/*if(answer < best){
@@ -193,20 +152,17 @@ public class NQueens{
 			}*/
 		}
 		if(size != 0){
-			avgEval = total/size;
+			avgEval = (double)total/(double)size;
 		}
 		else 
 			avgEval = 0;
 	}
 
-	public int fitness(){// Sets the fitness of each Genotype. Cannot be used until evaluation is run.
+	public void fitness(){// Sets the fitness of each Genotype. Cannot be used until evaluation is run.
 		for(int i = 0; i < size; i++){
 			//System.out.print("eval = " + initial.get(i).getEval());
-			if(initial.get(i).fitness(avgEval)){
-				return i;
-			}
+			initial.get(i).fitness(avgEval);
 		}
-		return -1;
 	}
 
 	public void select(){//uses remainder stochastic sampling. Function cannot be called until fitness and evaluation are done. Currently choosing worst instead of best
@@ -235,6 +191,7 @@ public class NQueens{
 	}
 
 	public boolean breed(){
+		int newEval = 0;
 		boolean add = false;
 		int secondOff = 0;
 		//Population newPop =  new Population(pass);
@@ -260,29 +217,32 @@ public class NQueens{
 			}*/
 			
 			//System.out.print(pass * pass + " cross " + crossPoint + "\n");
-			// System.out.print("Parent 1:\n");
-			// intermediate.get(i).print();
-			// System.out.print("\n");
-// 
-			// System.out.print("Parent 2:\n");
-			// intermediate.get(i + secondOff).print();
-			// System.out.print("\n");
+			//System.out.print("Parent 1:\n");
+			//intermediate.get(i).print();
+			//System.out.print("\n");
+//
+			//System.out.print("Parent 2:\n");
+			//intermediate.get(i + secondOff).print();
+			//System.out.print("\n");
 			//System.out.print("Crosspoint: " +  crossPoint + "\n");
 			
-			for(int k = 0; k < pass; k++){
+			for(int k = 0; k < pass; k++){//implement two point
 				choice = chooser.nextBoolean();
-				crossPoint = chooser.nextInt(pass * pass);
+				//crossPoint = chooser.nextInt(pass);
+				if(chooser.nextDouble() < .05){
+					newGene.add(k,chooser.nextBoolean());
+				}
 
-				if(choice){
-					if(intermediate.get(i).get(crossPoint) == true && newGene.get(crossPoint) == false)
-						newGene.set(crossPoint,true);
-					else k--;
+				else if(choice){
+					//if(intermediate.get(i).get(crossPoint) == true && newGene.get(crossPoint) == false)
+					newGene.add(k,intermediate.get(i).get(k));
+					//else k--;
 				}
 				else{
 					
-					if(intermediate.get(i + secondOff).get(crossPoint) == true && newGene.get(crossPoint) == false)
-						newGene.set(crossPoint, true);
-					else k--;
+					//if(intermediate.get(i + secondOff).get(crossPoint) == true && newGene.get(crossPoint) == false)
+					newGene.add(k,intermediate.get(i + secondOff).get(k));
+					//else k--;
 				}
 			}
 
@@ -290,19 +250,35 @@ public class NQueens{
 			// newGene.print();
 			// System.out.print("\n");
 			// System.out.print("\n");
-			newGene.evaluation();
-			newGene.fitness(avgEval);
-			if(newGene.getEval() < worst){
+			newEval = newGene.evaluation(inventory, maximum);
+			//newGene.fitness(avgEval);
+			if(newGene.getEval() > worst){
 				//System.out.print("adding: " + newGene.getEval() + "\n");
+				//newGene.print();
+				//System.out.print("\n");
+				//newEval = newGene.evaluation();
 				initial.add(newGene);
+
 				//System.out.print("removing: " + worst + "\n");
 				//initial.get(worstIndex).print();
 				//System.out.print("\n");
+				//System.out.print("old avg eval: " + avgEval + "\n");
+				//System.out.print("(" + avgEval + " * " + size + " - " + initial.get(worstIndex).getEval() + " + " + newEval + ")/ " + size + "\n");
+				avgEval = (avgEval * (double)size - (double)initial.get(worstIndex).getEval() + (double)newEval)/(double)size;
+				//System.out.print("new avg eval: " + avgEval + "\n");
 				initial.remove(worstIndex);
 				maxMin();
 				add = true;
 				//remove worst
 			}
+			/*else{
+				System.out.print("rejecting: " + newGene.getEval() + "\n");
+				newGene.print();
+				System.out.print("\n");
+				System.out.print("keeping: " + worst + "\n");
+				initial.get(worstIndex).print();
+				System.out.print("\n");
+			}*/
 			
 		//}
 		}
@@ -312,15 +288,22 @@ public class NQueens{
 	}
 
 	public boolean converge(){
-		for(int i = 0; i < initial.size(); i++){
-			for(int j = 0; j < initial.size(); j++){
-				for(int k = 0; k < pass * pass; k++){
+		int count = 0;
+		for(int i = 0; i < initial.size() - 1; i++){
+			/*for(int j = 0; j < initial.size(); j++){
+				for(int k = 0; k < pass; k++){
+					count++;
 					if(initial.get(i).get(k) != initial.get(j).get(k)){
+						System.out.print("converge time = " + count + "\n");
 						return false;
 					}
+				}*/
+				if(initial.get(i).getEval() != initial.get(i + 1).getEval()){
+					return false;
 				}
-			}
+			//}
 		}
+		//System.out.print("converge time = " + "\n");
 		return true;
 	}
 
@@ -342,17 +325,18 @@ public class NQueens{
 
 	public void maxMin(){
 		int answer = 0;
-		worst = -1;
+		best = -1;
+		worst = pass * pass;
 		for(int i = 0; i <initial.size(); i++){
 			answer = initial.get(i).getEval();
-			if(answer < best){
+			if(answer > best){
 				best = answer;
 				bestIndex = i;
 				//System.out.print("new best: " + best + "\n");
 				//initial.get(i).print();
 				//System.out.print("\n");
 			}
-			if(answer >= worst){
+			if(answer < worst){
 				worst = answer;
 				worstIndex = i;
 				//System.out.print("new worst: " + worst + "\n");
@@ -372,16 +356,12 @@ public class NQueens{
 		int chosen;
 		Random chooser = new Random();
 		for(int i = 1; i < size; i++){
-			for(int j = 0; j < pass * pass; j++){
-				if( chooser.nextDouble() < .2 ){
-					if(initial.get(i).get(j) == false){
-						initial.get(i).set(j, true);
-						count++;
-					}
-					else {
-						initial.get(i).set(j, false);
-						count--;
-					}
+			//System.out.print("original\n");
+			//initial.get(i).print();
+			//System.out.print("\n");
+			for(int j = 0; j < pass; j++){
+				if( chooser.nextDouble() < .5 ){
+					initial.get(i).add(j, chooser.nextBoolean());
 				}
 				/*if(initial.get(i).get(chosen) && queen){
 					initial.get(i).set(chosen, false);
@@ -391,40 +371,17 @@ public class NQueens{
 					initial.get(i).set(chosen, false);
 				}*/
 			}
-			if(count < pass){
-				for(int j = 0; j < pass * pass; j++){
-					if( chooser.nextDouble() < .2 ){
-						if(initial.get(i).get(j) == false){
-							initial.get(i).set(j, true);
-							count++;
-						}
-					}
-					if(count == pass) break;
-					else if(j == pass * pass - 1){
-						j = 0;
-					}
-				}
-
-			}
-			else if(count > pass){
-				for(int j = 0; j < pass * pass; j++){
-					if( chooser.nextDouble() < .2 ){
-						if(initial.get(i).get(j) == true){
-							initial.get(i).set(j, false);
-							count--;
-						}
-					}
-					if(count == pass) break;
-					else if(j == pass * pass - 1){
-						j = 0;
-					}
-				}
-			}
+			//System.out.print("mutated\n");
+			//initial.get(i).print();
+			//System.out.print("\n");
 		}
+		evaluation();
+		maxMin();
 	}
 
 
-
+	int maximum;
+	ArrayList<Item> inventory;
 	int bestIndex;
 	int best;
 	int worst;
@@ -433,40 +390,61 @@ public class NQueens{
 	int size;
 	ArrayList<Genotype> initial;
 	ArrayList<Genotype> intermediate;
-	int avgEval;
+	double avgEval;
 	
 
 	public static void main (String args[]){
+		ArrayList<Item> inventory = new ArrayList<Item>();
+		Item tempItem;
+		Scanner read = null;
+		try{
+			read = new Scanner(new File("/Users/Fraser/Desktop/Programming/Artificial Intelligence/k_basic/k30.txt"));
+		}
+		catch(FileNotFoundException e){
+			System.err.println("FileNotFoundException: " + e.getMessage());
+		}
+		int max = read.nextInt();
+		while(read.hasNext()){
+			tempItem = new Item(read.nextInt(), read.nextInt());
+			inventory.add(tempItem);
+			read.next();
+		}
+
 		int cycles = 0;
-		//boolean add = true;
+		boolean add = true;
 		int catCount = 0;
 		int answer = -1;
 		int temp = -1;
-		NQueens queen = new NQueens(8);
-		queen.randomStart();
-		while(catCount < 3){
-			temp = queen.getBest();
-			queen.evaluation();
-			answer = queen.fitness();
-			queen.select();
-			queen.breed();
+		Knapsack sack = new Knapsack(inventory.size(), inventory, max);
+		sack.randomStart();
+		while(true){
+			//temp = queen.getBest();
+			sack.fitness();
+			sack.select();
+			add = sack.breed();
 			cycles++;
-			//System.out.print("cycles: " + cycles + "\n");
-			if(answer != -1){
-				//queen.get(answer);
+			//if(catCount == 2)
+			//	System.out.print("cycles: " + cycles + "\n");
+			if(catCount >= 1000){
 				break;
 			}
-			if(queen.converge()){
-				System.out.print("cycles per convergance: " + cycles + "\n");
+			if(sack.converge()){
+				//System.out.print(catCount + " times\n");
+				//queen.get(queen.getBestIndex());
+				//System.out.print("\n");
+				//System.out.print("cycles per convergance: " + cycles + "\n");
 				cycles = 0;
-				queen.catMut();
+				sack.catMut();
+				
 				catCount++;
 			} 
 			//System.out.print("conflicts: " + queen.getBest() + "\n");
 			//System.out.print("size: " + queen.getSize() + "\n");
 		}
-		queen.get(queen.getBestIndex());
-		System.out.print("conflicts: " + queen.getBest() + "\n");
+		//queen.maxMin();
+		sack.get(sack.getBestIndex());
+		System.out.print("\n");
+		//System.out.print("conflicts: " + queen.getBest() + "\n");
 	}
 }
 

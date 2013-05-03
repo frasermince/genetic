@@ -7,69 +7,47 @@ class Genotype{
 	Genotype(int n){
 		size = n;
 
-		board = new BitSet(size * size);
+		board = new ArrayList<Integer>();
 		//System.out.print("size" + board.length() + "\n");
 	}
 
 	public void randomStart(){
-		boolean temp;
-		int random;
 		Random selector = new Random();
-		for(int i = 0; i < size * size; i++){
-			board.set(i,false);
-		}
 		for(int i = 0; i < size; i++){
-			//temp = selector.nextBoolean();
-			//System.out.print("randomizing " + temp + "\n");
-			random = selector.nextInt(size * size);
-			if(board.get(random) == false || i == 0)
-				board.set(random);
-			else
-				i--;
+			board.add(selector.nextInt(size));
 		}
 	}
 
 	public int evaluation(){
-		int count = 0;
 		int conflict = 0;
-		bigLoop: for(int i = 0; i < size * size; i++){
-			for(int j = i; j < i / size * size + size; j++){//rows
-				if(board.get(i) && board.get(j) && i != j){
+		bigLoop: for(int i = 0; i < size; i++){
+			for(int j = i; j < size; j++){//rows
+				if(board.get(i) == board.get(j) && i != j){
 					//System.out.print("rows " + i + " and " + j + "\n");
 					conflict++;
 					continue bigLoop;
 				}
 			}
-			for(int j = i; j < board.length(); j+=size){//columns
+			/*for(int j = i; j < board.length(); j+=size){//columns
 				if(board.get(i) && board.get(j) && i != j){
 					//System.out.print("columns " + i + " and " + j + "\n");
 					conflict++;
 					continue bigLoop;
 				}
-			}
-			count = i;
-			while (count < board.length()){//diagnols
-				if(board.get(i) && board.get(count) && i != count){
+			}*/
+			for(int j = i; j < size; j++){//diagnols
+				if(board.get(i) == board.get(j) - (j - i) && i != j){
 					//System.out.print("right " + i + " and " + count + "\n");
 					conflict++;
 					continue bigLoop;
 				}
-				if(count % size != 6){
-					count += size + 1;
-				}
-				else break;
 			}
-			count = i;
-			while (count < board.length()){
-				if(board.get(i) && board.get(count) && i != count){
+			for(int j = i; j < size; j++){
+				if(board.get(i) == board.get(j) + (j - i) && i != j){
 					//System.out.print("left " + i + " and " + count + "\n");
 					conflict++;
 					continue bigLoop;
 				}
-				if(count % size != 0){
-					count += size - 1;
-				}
-				else break;
 			}	
 		}
 		eval = conflict;
@@ -80,13 +58,13 @@ class Genotype{
 		return eval;
 	}
 
-	public boolean fitness(int avg){
+	public boolean fitness(double avg){
 		if(eval == 0){
 			return true;
 		}
 		//System.out.print("average " + avg + " ");
 		//System.out.print("evaluation " + eval + "\n");
-		fit = (double)avg/(double)eval;
+		fit = avg/(double)eval;
 		return false;
 		//System.out.print("fitness " + fit + "\n");
 	}
@@ -95,35 +73,27 @@ class Genotype{
 		return fit;
 	}
 
-	public void set(int n, boolean fact){
-		board.set(n, fact);
+	public void add(int n, int fact){
+		board.add(n, fact);
 	}
 
-	public boolean get(int n){
+	public int get(int n){
 		return board.get(n);
 	}
 
 	public int getSize(){
-		return size * size;
+		return size;
 	}
 
-	public void flip(int n){
+	/*public void flip(int n){
 		board.flip(n);
-	}
+	}*/
 
 	public void print(){
+		System.out.print("size = " + size + "\n");
 		System.out.print("conflicts = " + eval + "\n");
-		for(int i = 0; i < size * size; i++){
-			if(board.get(i) ==true){
-				System.out.print("1 ");
-			}
-			else{
-				System.out.print("0 ");
-			}
-			
-			if(i % size == size - 1){
-				System.out.print("\n");
-			}
+		for(int i = 0; i < size; i++){
+			System.out.print(board.get(i) + "  ");
 		}
 		//System.out.print(board.get(63));
 	}
@@ -132,14 +102,14 @@ class Genotype{
 	int eval;
 	double fit;
 	int size;
-	BitSet board;
+	ArrayList<Integer> board;
 }
 
-public class NQueens{
-	NQueens(int n){
+public class NQueens2{
+	NQueens2(int n){
 		pass = n;
-		best = pass * pass * pass; // better than possible
-		worst = -1; //worst than possible
+		best = pass + 1; // worst than possible
+		worst = -1; //better than possible
 		size = 0;
 		initial = new ArrayList<Genotype>();
 	}
@@ -193,7 +163,7 @@ public class NQueens{
 			}*/
 		}
 		if(size != 0){
-			avgEval = total/size;
+			avgEval = (double)total/(double)size;
 		}
 		else 
 			avgEval = 0;
@@ -235,6 +205,7 @@ public class NQueens{
 	}
 
 	public boolean breed(){
+		int newEval = 0;
 		boolean add = false;
 		int secondOff = 0;
 		//Population newPop =  new Population(pass);
@@ -271,18 +242,21 @@ public class NQueens{
 			
 			for(int k = 0; k < pass; k++){
 				choice = chooser.nextBoolean();
-				crossPoint = chooser.nextInt(pass * pass);
+				crossPoint = chooser.nextInt(pass);
+				if(chooser.nextDouble() < .05){
+					newGene.add(k,chooser.nextInt(pass));
+				}
 
-				if(choice){
-					if(intermediate.get(i).get(crossPoint) == true && newGene.get(crossPoint) == false)
-						newGene.set(crossPoint,true);
-					else k--;
+				else if(choice){
+					//if(intermediate.get(i).get(crossPoint) == true && newGene.get(crossPoint) == false)
+					newGene.add(k,intermediate.get(i).get(k));
+					//else k--;
 				}
 				else{
 					
-					if(intermediate.get(i + secondOff).get(crossPoint) == true && newGene.get(crossPoint) == false)
-						newGene.set(crossPoint, true);
-					else k--;
+					//if(intermediate.get(i + secondOff).get(crossPoint) == true && newGene.get(crossPoint) == false)
+					newGene.add(k,intermediate.get(i + secondOff).get(k));
+					//else k--;
 				}
 			}
 
@@ -290,19 +264,35 @@ public class NQueens{
 			// newGene.print();
 			// System.out.print("\n");
 			// System.out.print("\n");
-			newGene.evaluation();
-			newGene.fitness(avgEval);
+			newEval = newGene.evaluation();
+			//newGene.fitness(avgEval);
 			if(newGene.getEval() < worst){
 				//System.out.print("adding: " + newGene.getEval() + "\n");
+				//newGene.print();
+				//System.out.print("\n");
+				//newEval = newGene.evaluation();
 				initial.add(newGene);
+
 				//System.out.print("removing: " + worst + "\n");
 				//initial.get(worstIndex).print();
 				//System.out.print("\n");
+				//System.out.print("old avg eval: " + avgEval + "\n");
+				//System.out.print("(" + avgEval + " * " + size + " - " + initial.get(worstIndex).getEval() + " + " + newEval + ")/ " + size + "\n");
+				avgEval = (avgEval * (double)size - (double)initial.get(worstIndex).getEval() + (double)newEval)/(double)size;
+				//System.out.print("new avg eval: " + avgEval + "\n");
 				initial.remove(worstIndex);
 				maxMin();
 				add = true;
 				//remove worst
 			}
+			/*else{
+				System.out.print("rejecting: " + newGene.getEval() + "\n");
+				newGene.print();
+				System.out.print("\n");
+				System.out.print("keeping: " + worst + "\n");
+				initial.get(worstIndex).print();
+				System.out.print("\n");
+			}*/
 			
 		//}
 		}
@@ -312,15 +302,22 @@ public class NQueens{
 	}
 
 	public boolean converge(){
-		for(int i = 0; i < initial.size(); i++){
-			for(int j = 0; j < initial.size(); j++){
-				for(int k = 0; k < pass * pass; k++){
+		int count = 0;
+		for(int i = 0; i < initial.size() - 1; i++){
+			/*for(int j = 0; j < initial.size(); j++){
+				for(int k = 0; k < pass; k++){
+					count++;
 					if(initial.get(i).get(k) != initial.get(j).get(k)){
+						System.out.print("converge time = " + count + "\n");
 						return false;
 					}
+				}*/
+				if(initial.get(i).getEval() != initial.get(i + 1).getEval()){
+					return false;
 				}
-			}
+			//}
 		}
+		//System.out.print("converge time = " + "\n");
 		return true;
 	}
 
@@ -342,6 +339,7 @@ public class NQueens{
 
 	public void maxMin(){
 		int answer = 0;
+		best = pass * pass;
 		worst = -1;
 		for(int i = 0; i <initial.size(); i++){
 			answer = initial.get(i).getEval();
@@ -352,7 +350,7 @@ public class NQueens{
 				//initial.get(i).print();
 				//System.out.print("\n");
 			}
-			if(answer >= worst){
+			if(answer > worst){
 				worst = answer;
 				worstIndex = i;
 				//System.out.print("new worst: " + worst + "\n");
@@ -372,16 +370,12 @@ public class NQueens{
 		int chosen;
 		Random chooser = new Random();
 		for(int i = 1; i < size; i++){
-			for(int j = 0; j < pass * pass; j++){
-				if( chooser.nextDouble() < .2 ){
-					if(initial.get(i).get(j) == false){
-						initial.get(i).set(j, true);
-						count++;
-					}
-					else {
-						initial.get(i).set(j, false);
-						count--;
-					}
+			//System.out.print("original\n");
+			//initial.get(i).print();
+			//System.out.print("\n");
+			for(int j = 0; j < pass; j++){
+				if( chooser.nextDouble() < .5 ){
+					initial.get(i).add(j, chooser.nextInt(pass));
 				}
 				/*if(initial.get(i).get(chosen) && queen){
 					initial.get(i).set(chosen, false);
@@ -391,36 +385,12 @@ public class NQueens{
 					initial.get(i).set(chosen, false);
 				}*/
 			}
-			if(count < pass){
-				for(int j = 0; j < pass * pass; j++){
-					if( chooser.nextDouble() < .2 ){
-						if(initial.get(i).get(j) == false){
-							initial.get(i).set(j, true);
-							count++;
-						}
-					}
-					if(count == pass) break;
-					else if(j == pass * pass - 1){
-						j = 0;
-					}
-				}
-
-			}
-			else if(count > pass){
-				for(int j = 0; j < pass * pass; j++){
-					if( chooser.nextDouble() < .2 ){
-						if(initial.get(i).get(j) == true){
-							initial.get(i).set(j, false);
-							count--;
-						}
-					}
-					if(count == pass) break;
-					else if(j == pass * pass - 1){
-						j = 0;
-					}
-				}
-			}
+			//System.out.print("mutated\n");
+			//initial.get(i).print();
+			//System.out.print("\n");
 		}
+		evaluation();
+		maxMin();
 	}
 
 
@@ -433,40 +403,49 @@ public class NQueens{
 	int size;
 	ArrayList<Genotype> initial;
 	ArrayList<Genotype> intermediate;
-	int avgEval;
+	double avgEval;
 	
 
 	public static void main (String args[]){
 		int cycles = 0;
-		//boolean add = true;
+		boolean add = true;
 		int catCount = 0;
 		int answer = -1;
 		int temp = -1;
-		NQueens queen = new NQueens(8);
+		NQueens2 queen = new NQueens2(1000);
 		queen.randomStart();
-		while(catCount < 3){
-			temp = queen.getBest();
-			queen.evaluation();
+		while(true){
+			//temp = queen.getBest();
 			answer = queen.fitness();
 			queen.select();
-			queen.breed();
+			add = queen.breed();
 			cycles++;
-			//System.out.print("cycles: " + cycles + "\n");
+			//if(catCount == 2)
+			//	System.out.print("cycles: " + cycles + "\n");
 			if(answer != -1){
 				//queen.get(answer);
 				break;
 			}
+			if(catCount >= 1000){
+				break;
+			}
 			if(queen.converge()){
-				System.out.print("cycles per convergance: " + cycles + "\n");
+				//System.out.print(catCount + " times\n");
+				//queen.get(queen.getBestIndex());
+				//System.out.print("\n");
+				//System.out.print("cycles per convergance: " + cycles + "\n");
 				cycles = 0;
 				queen.catMut();
+				
 				catCount++;
 			} 
 			//System.out.print("conflicts: " + queen.getBest() + "\n");
 			//System.out.print("size: " + queen.getSize() + "\n");
 		}
+		//queen.maxMin();
 		queen.get(queen.getBestIndex());
-		System.out.print("conflicts: " + queen.getBest() + "\n");
+		System.out.print("\n");
+		//System.out.print("conflicts: " + queen.getBest() + "\n");
 	}
 }
 
