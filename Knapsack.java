@@ -226,7 +226,7 @@ public class Knapsack{
 			//System.out.print("\n");
 			//System.out.print("Crosspoint: " +  crossPoint + "\n");
 			
-			for(int k = 0; k < pass; k++){//implement two point
+			for(int k = 0; k < pass; k++){//random crossover
 				choice = chooser.nextBoolean();
 				//crossPoint = chooser.nextInt(pass);
 				if(chooser.nextDouble() < .05){

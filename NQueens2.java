@@ -20,6 +20,7 @@ class Genotype{
 
 	public int evaluation(){
 		int conflict = 0;
+		//System.out.print(size + " size" + "\n");
 		bigLoop: for(int i = 0; i < size; i++){
 			for(int j = i; j < size; j++){//rows
 				if(board.get(i) == board.get(j) && i != j){
@@ -75,6 +76,10 @@ class Genotype{
 
 	public void add(int n, int fact){
 		board.add(n, fact);
+	}
+
+	public void set(int n, int fact){
+		board.set(n, fact);
 	}
 
 	public int get(int n){
@@ -207,45 +212,83 @@ public class NQueens2{
 	public boolean breed(){
 		int newEval = 0;
 		boolean add = false;
-		int secondOff = 0;
+		//int secondOff = 0;
 		//Population newPop =  new Population(pass);
 		Genotype newGene;
 		Random chooser = new Random();
-		int crossPoint;
+		int count;
+		int start = 0;
+		int finish = 0;
 		int interSize = intermediate.size();
 		boolean choice;
 		int recurrences = interSize / size;
 		recurrences++;
 		//System.out.print("recurrences = " + recurrences + "\n");
-		for(int i = 0; i < intermediate.size(); i += 2){
+		for(int i = 0; i < intermediate.size() - 1; i += 2){
 			//if(i != intermediate.size() - 1){
-			if(i != intermediate.size() - 1){
+			/*if(i != intermediate.size() - 1){
 					secondOff = 1;
 				}
 			else
-			secondOff= -1;
+			secondOff= -1;*/
 			
 			newGene = new Genotype(pass);
+			for(int j = 0; j < pass; j++){
+				newGene.add(j, 0);
+			}
 			/*for(int bit = 0; bit < pass * pass; bit++){
 				newGene.set(bit,false);
 			}*/
 			
 			//System.out.print(pass * pass + " cross " + crossPoint + "\n");
-			// System.out.print("Parent 1:\n");
-			// intermediate.get(i).print();
-			// System.out.print("\n");
-// 
-			// System.out.print("Parent 2:\n");
-			// intermediate.get(i + secondOff).print();
-			// System.out.print("\n");
+			//System.out.print("Parent 1:\n");
+			//intermediate.get(i).print();
+			//System.out.print("\n");
+			//System.out.print("Parent 2:\n");
+			//intermediate.get(i + 1).print();
+			//System.out.print("\n");
 			//System.out.print("Crosspoint: " +  crossPoint + "\n");
-			
-			for(int k = 0; k < pass; k++){
-				choice = chooser.nextBoolean();
-				crossPoint = chooser.nextInt(pass);
-				if(chooser.nextDouble() < .05){
-					newGene.add(k,chooser.nextInt(pass));
+			//System.out.print(intermediate.size() + "\n");
+			//System.out.print("pass = " + pass + "\n");
+			start = chooser.nextInt(pass);
+			finish = start;
+			//System.out.print("start: " + start + "\n");
+			while(start == finish){
+				finish = chooser.nextInt(pass);
+			}
+			//System.out.print("finish: " + finish + "\n");
+			count = start;
+			while(count % pass != finish){// two point crossover
+				//crossPoint = chooser.nextInt(pass);
+				if(chooser.nextDouble() < .00){
+					newGene.set(count % pass, chooser.nextInt(pass));
 				}
+				else{
+					newGene.set(count % pass,intermediate.get(i).get(count % pass));
+				}
+				//System.out.print(newGene.get(count % pass) + "\n");
+				//System.out.print("from parent 1: " + count%pass + "\n");
+				count++;
+			}
+
+			count = finish;
+			while(count % pass != start){
+				//crossPoint = chooser.nextInt(pass);
+				if(chooser.nextDouble() < .00){
+					newGene.set(count % pass, chooser.nextInt(pass));
+				}
+				else{
+					newGene.set(count % pass,intermediate.get(i + 1).get(count % pass));
+				}
+				//System.out.print("from parent 2: " + count%pass + "\n");
+				count++;
+			}
+
+			/*for(int temporary = 0; temporary < pass; temporary++){
+				newGene.get(temporary);
+			}*/
+
+			/*for(int k = 0; k < pass; k++){	
 
 				else if(choice){
 					//if(intermediate.get(i).get(crossPoint) == true && newGene.get(crossPoint) == false)
@@ -258,11 +301,11 @@ public class NQueens2{
 					newGene.add(k,intermediate.get(i + secondOff).get(k));
 					//else k--;
 				}
-			}
+			}*/
 
-			// System.out.print("Child:\n");
-			// newGene.print();
-			// System.out.print("\n");
+			//System.out.print("Child:\n");
+			//newGene.print();
+			//System.out.print("\n");
 			// System.out.print("\n");
 			newEval = newGene.evaluation();
 			//newGene.fitness(avgEval);
@@ -412,7 +455,7 @@ public class NQueens2{
 		int catCount = 0;
 		int answer = -1;
 		int temp = -1;
-		NQueens2 queen = new NQueens2(1000);
+		NQueens2 queen = new NQueens2(14);
 		queen.randomStart();
 		while(true){
 			//temp = queen.getBest();
@@ -430,7 +473,7 @@ public class NQueens2{
 				break;
 			}
 			if(queen.converge()){
-				//System.out.print(catCount + " times\n");
+				System.out.print(catCount + " times\n");
 				//queen.get(queen.getBestIndex());
 				//System.out.print("\n");
 				//System.out.print("cycles per convergance: " + cycles + "\n");
