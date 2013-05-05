@@ -110,18 +110,19 @@ class Genotype{
 	ArrayList<Integer> board;
 }
 
-public class NQueens2{
+public class NQueens2 implements Runnable{
 	NQueens2(int n){
 		pass = n;
 		best = pass + 1; // worst than possible
 		worst = -1; //better than possible
 		size = 0;
 		initial = new ArrayList<Genotype>();
+		size = 100;
 	}
 
 	public int randomStart(){
 		int answer = -1;
-		size = 80;
+		
 		for(int i = 0; i < size; i++){
 			initial.add(new Genotype(pass));
 			initial.get(i).randomStart();
@@ -436,6 +437,34 @@ public class NQueens2{
 		maxMin();
 	}
 
+	public void run(){
+		randomStart();
+		while(true){
+			//temp = queen.getBest();
+			answer = fitness();
+			select();
+			add = breed();
+			cycles++;
+			//if(catCount == 2)
+			//	System.out.print("cycles: " + cycles + "\n");
+			if(answer != -1){
+				//queen.get(answer);
+				break;
+			}
+			if(catCount >= 1000){
+				break;
+			}
+			if(converge()){
+				System.out.print(catCount + " times\n");
+				//queen.get(queen.getBestIndex());
+				//System.out.print("\n");
+				//System.out.print("cycles per convergance: " + cycles + "\n");
+				cycles = 0;
+				catMut();
+				
+				catCount++;
+			} 
+	}
 
 
 	int bestIndex;
@@ -455,7 +484,11 @@ public class NQueens2{
 		int catCount = 0;
 		int answer = -1;
 		int temp = -1;
-		NQueens2 queen = new NQueens2(14);
+		NQueens2 queen1 = new NQueens2(14);
+		NQueens2 queen2 = new NQueens2(14);
+		NQueens2 queen3 = new NQueens2(14);
+		NQueens2 queen4 = new NQueens2(14);
+		NQueens2 queen5 = new NQueens2(14);
 		queen.randomStart();
 		while(true){
 			//temp = queen.getBest();
