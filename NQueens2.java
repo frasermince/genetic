@@ -95,7 +95,7 @@ class Genotype{
 	}*/
 
 	public void print(){
-		System.out.print("size = " + size + "\n");
+		//System.out.print("size = " + size + "\n");
 		System.out.print("conflicts = " + eval + "\n");
 		for(int i = 0; i < size; i++){
 			System.out.print(board.get(i) + "  ");
@@ -112,6 +112,8 @@ class Genotype{
 
 public class NQueens2 implements Runnable{
 	NQueens2(int n){
+		zero = false;
+		catCount = 0;
 		pass = n;
 		best = pass + 1; // worst than possible
 		worst = -1; //better than possible
@@ -129,7 +131,7 @@ public class NQueens2 implements Runnable{
 			//initial.get(i).print();
 			//System.out.print("\n");
 		}
-		System.out.print("size " + initial.get(0).getSize() + "\n");
+		//System.out.print("size " + initial.get(0).getSize() + "\n");
 		evaluation();
 		answer = fitness();
 		select();
@@ -152,11 +154,37 @@ public class NQueens2 implements Runnable{
 		maxMin();
 	}
 
+	public void conditionalAdd(Genotype member){
+		int newEval = member.evaluation();
+		if(member.getEval() < worst){
+			//member.print();
+			//System.out.print("\n");
+			//System.out.print("adding: " + newGene.getEval() + "\n");
+			//newGene.print();
+			//System.out.print("\n");
+			//newEval = newGene.evaluation();
+			initial.add(member);
+
+			//System.out.print("removing: " + worst + "\n");
+			//initial.get(worstIndex).print();
+			//System.out.print("\n");
+			//System.out.print("old avg eval: " + avgEval + "\n");
+			//System.out.print("(" + avgEval + " * " + size + " - " + initial.get(worstIndex).getEval() + " + " + newEval + ")/ " + size + "\n");
+			avgEval = (avgEval * (double)size - (double)initial.get(worstIndex).getEval() + (double)newEval)/(double)size;
+			//System.out.print("new avg eval: " + avgEval + "\n");
+			initial.remove(worstIndex);
+			maxMin();
+		}
+	}
+
 	public void evaluation(){//Finds how close to the answer each genotype is.
 		int answer;
 		int total = 0;
 		for(int i = 0; i < size; i++){
 			answer = initial.get(i).evaluation();
+			if(answer == 0){
+				zero = true;
+			}
 			total += answer;
 			//System.out.print(answer + "\n");
 			/*if(answer < best){
@@ -211,6 +239,7 @@ public class NQueens2 implements Runnable{
 	}
 
 	public boolean breed(){
+		isConverged = false;
 		int newEval = 0;
 		boolean add = false;
 		//int secondOff = 0;
@@ -261,7 +290,7 @@ public class NQueens2 implements Runnable{
 			count = start;
 			while(count % pass != finish){// two point crossover
 				//crossPoint = chooser.nextInt(pass);
-				if(chooser.nextDouble() < .00){
+				if(chooser.nextDouble() < .05){
 					newGene.set(count % pass, chooser.nextInt(pass));
 				}
 				else{
@@ -275,7 +304,7 @@ public class NQueens2 implements Runnable{
 			count = finish;
 			while(count % pass != start){
 				//crossPoint = chooser.nextInt(pass);
-				if(chooser.nextDouble() < .00){
+				if(chooser.nextDouble() < .05){
 					newGene.set(count % pass, chooser.nextInt(pass));
 				}
 				else{
@@ -308,9 +337,10 @@ public class NQueens2 implements Runnable{
 			//newGene.print();
 			//System.out.print("\n");
 			// System.out.print("\n");
+			conditionalAdd(newGene);
 			newEval = newGene.evaluation();
 			//newGene.fitness(avgEval);
-			if(newGene.getEval() < worst){
+			/*if(newGene.getEval() < worst){
 				//System.out.print("adding: " + newGene.getEval() + "\n");
 				//newGene.print();
 				//System.out.print("\n");
@@ -328,7 +358,7 @@ public class NQueens2 implements Runnable{
 				maxMin();
 				add = true;
 				//remove worst
-			}
+			}*/
 			/*else{
 				System.out.print("rejecting: " + newGene.getEval() + "\n");
 				newGene.print();
@@ -357,12 +387,14 @@ public class NQueens2 implements Runnable{
 					}
 				}*/
 				if(initial.get(i).getEval() != initial.get(i + 1).getEval()){
-					return false;
+					isConverged = false;
+					return isConverged;
 				}
 			//}
 		}
 		//System.out.print("converge time = " + "\n");
-		return true;
+		isConverged = true;
+		return isConverged;
 	}
 
 	public int getSize(){
@@ -377,29 +409,39 @@ public class NQueens2 implements Runnable{
 		return bestIndex;
 	}
 
+	public Genotype getBestGene(){
+		return initial.get(bestIndex);
+	}
+
 	public int getWorst(){
 		return worst;
+	} 
+
+	public boolean isZero(){
+		return zero;
 	}
 
 	public void maxMin(){
 		int answer = 0;
 		best = pass * pass;
 		worst = -1;
-		for(int i = 0; i <initial.size(); i++){
-			answer = initial.get(i).getEval();
-			if(answer < best){
-				best = answer;
-				bestIndex = i;
-				//System.out.print("new best: " + best + "\n");
-				//initial.get(i).print();
-				//System.out.print("\n");
-			}
-			if(answer > worst){
-				worst = answer;
-				worstIndex = i;
-				//System.out.print("new worst: " + worst + "\n");
-				//initial.get(i).print();
-				//System.out.print("\n");
+		if(initial != null){
+			for(int i = 0; i <initial.size(); i++){
+				answer = initial.get(i).getEval();
+				if(answer < best){
+					best = answer;
+					bestIndex = i;
+					//System.out.print("new best: " + best + "\n");
+					//initial.get(i).print();
+					//System.out.print("\n");
+				}
+				if(answer > worst){
+					worst = answer;
+					worstIndex = i;
+					//System.out.print("new worst: " + worst + "\n");
+					//initial.get(i).print();
+					//System.out.print("\n");
+				}
 			}
 		}
 	}
@@ -408,7 +450,12 @@ public class NQueens2 implements Runnable{
 		initial.get(n).print();
 	}
 
+	public int getCatCount(){
+		return catCount;
+	}
+
 	public void catMut(){
+		catCount++;
 		//boolean first = true;
 		int count = pass;
 		int chosen;
@@ -438,8 +485,14 @@ public class NQueens2 implements Runnable{
 	}
 
 	public void run(){
-		randomStart();
-		while(true){
+		int cycles = 0;
+		boolean add = true;
+		//int catCount = 0;
+		int answer = -1;
+		int temp = -1;
+		
+		while(cycles < 10){
+			//System.out.print("cycles: " + cycles + "\n");
 			//temp = queen.getBest();
 			answer = fitness();
 			select();
@@ -448,25 +501,29 @@ public class NQueens2 implements Runnable{
 			//if(catCount == 2)
 			//	System.out.print("cycles: " + cycles + "\n");
 			if(answer != -1){
+				zero = true;
+				System.out.print("here\n");
 				//queen.get(answer);
-				break;
-			}
-			if(catCount >= 1000){
+				//System.out.print("here\n");
 				break;
 			}
 			if(converge()){
-				System.out.print(catCount + " times\n");
+				//System.out.print("converge\n");
+				//System.out.print(catCount + " times\n");
 				//queen.get(queen.getBestIndex());
 				//System.out.print("\n");
 				//System.out.print("cycles per convergance: " + cycles + "\n");
-				cycles = 0;
 				catMut();
 				
 				catCount++;
 			} 
+		}
+			//get(best);
+			//System.out.print("\n");
 	}
-
-
+		
+	boolean zero;
+	boolean isConverged;
 	int bestIndex;
 	int best;
 	int worst;
@@ -476,20 +533,62 @@ public class NQueens2 implements Runnable{
 	ArrayList<Genotype> initial;
 	ArrayList<Genotype> intermediate;
 	double avgEval;
+	int catCount;
 	
 
-	public static void main (String args[]){
-		int cycles = 0;
-		boolean add = true;
-		int catCount = 0;
-		int answer = -1;
-		int temp = -1;
-		NQueens2 queen1 = new NQueens2(14);
-		NQueens2 queen2 = new NQueens2(14);
-		NQueens2 queen3 = new NQueens2(14);
-		NQueens2 queen4 = new NQueens2(14);
-		NQueens2 queen5 = new NQueens2(14);
-		queen.randomStart();
+	public static void main (String args[]) throws Exception{
+		int answerIndex = 0;
+		int popIndex = 0;
+		boolean breakCondition = false;
+		NQueens2[] queenArray = new NQueens2[5];
+		Thread[] threadArray = new Thread[5];
+		for(int i = 0; i < 5; i++){
+			queenArray[i] = new NQueens2(100);
+			queenArray[i].randomStart();
+		}
+
+
+		bigLoop: while(!breakCondition){
+			breakCondition = true;
+			for(int i = 0; i < 5; i++){
+				threadArray[i] = new Thread(queenArray[i]);
+				threadArray[i].start();
+			}
+
+			for(int i = 0; i < 5; i++){
+				for(int j = 0; j < 5; j++){
+					threadArray[j].join();
+					if(queenArray[j].isZero()){
+						break bigLoop;
+					}
+					queenArray[j].maxMin();
+					//System.out.print("adding: ");
+					//queenArray[i].getBestGene().print();
+					//System.out.print("\n");
+					queenArray[j].conditionalAdd(queenArray[i].getBestGene());
+				}
+			}
+			for(int i = 0; i < 5; i++){
+				if(queenArray[i].getCatCount() < 1000){
+					breakCondition = false;
+				}
+			}
+		}
+		int max = 1000000;
+		for(int i = 0; i < 5; i++){
+			queenArray[i].maxMin();
+			//System.out.print("best " + queenArray[i].getBest() + "\n");
+			if(queenArray[i].getBest() < max){
+				//queenArray[i].getBestGene().print();
+				answerIndex = queenArray[i].getBestIndex();
+				popIndex = i;
+				max = queenArray[i].getBest();
+			}
+		}
+		queenArray[popIndex].get(answerIndex);
+		System.out.print("\n");
+			
+		/*queen.randomStart();
 		while(true){
 			//temp = queen.getBest();
 			answer = queen.fitness();
@@ -520,7 +619,7 @@ public class NQueens2 implements Runnable{
 		}
 		//queen.maxMin();
 		queen.get(queen.getBestIndex());
-		System.out.print("\n");
+		System.out.print("\n");*/
 		//System.out.print("conflicts: " + queen.getBest() + "\n");
 	}
 }
